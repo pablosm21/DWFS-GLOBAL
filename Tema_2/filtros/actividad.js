@@ -33,6 +33,7 @@ function ejemplo() {
   handler.savePixels(pixeles, outputPath, filas, columnas);
 }
 
+
 /**
  * Esta función debe transformar una imagen en escala de rojos.
  *
@@ -42,7 +43,15 @@ function redConverter() {
   let outputPath = 'output/tucan_red.jpg';
   let pixels = handler.getPixels();
 
-  //Aqui tu codigo
+  //RGB --> RED, GREEN & BLUE needed first channel only
+  //[[r,g,b], [r,g,b], [r,g,b] ... column[r,g,b]],
+  //row [[r,g,b], [r,g,b], [r,g,b] ... column[r,g,b]]
+  for (let column=0; column<handler.getShape()[0]; column++){
+    for (let row=0; row<handler.getShape()[1];row++){
+      pixels[column][row][1]=0;
+      pixels[column][row][2]=0;
+    }
+  }
 
   handler.savePixels(pixels, outputPath);
 }
@@ -56,7 +65,11 @@ function greenConverter() {
   let outputPath = 'output/tucan_green.jpg';
   let pixels = handler.getPixels();
 
-  //Aqui tu codigo
+  for (let column=0; column<handler.getShape()[0]; column++){
+    for (let row=0; row<handler.getShape()[1];row++){
+      pixels[column][row]= [0, pixels[column][row][1], 0];
+    }
+  }
 
   handler.savePixels(pixels, outputPath);
 }
@@ -70,7 +83,11 @@ function blueConverter() {
   let outputPath = 'output/tucan_blue.jpg';
   let pixels = handler.getPixels();
 
-  //Aqui tu codigo
+  for (let column=0; column<handler.getShape()[0]; column++){
+    for (let row=0; row<handler.getShape()[1];row++){
+      pixels[column][row]=[0,0,pixels[column][row][2]]
+    }
+  }
 
   handler.savePixels(pixels, outputPath);
 }
@@ -88,7 +105,12 @@ function greyConverter() {
   let outputPath = 'output/tucan_grey.jpg';
   let pixels = handler.getPixels();
 
-  //Aqui tu codigo
+  for (let column=0; column<handler.getShape()[0]; column++){
+    for (let row=0; row<handler.getShape()[1];row++){
+      let media = (pixels[column][row][0] + pixels[column][row][1] + pixels[column][row][2]) / 3;
+      pixels[column][row] = [media, media, media];
+    }
+  }
 
   handler.savePixels(pixels, outputPath);
 }
@@ -104,7 +126,17 @@ function blackAndWhiteConverter() {
   let outputPath = 'output/tucan_black_and_white.jpg';
   let pixels = handler.getPixels();
 
-  //Aqui tu codigo
+  for (let column=0; column<handler.getShape()[0]; column++){
+    for (let row=0; row<handler.getShape()[1];row++){
+      let pixel = pixels[column][row];
+      let media = (pixel[0] + pixel[1] + pixel[2]) / 3;
+      if (media < 128) {
+        pixels[column][row] = [0, 0, 0];
+      } else {
+        pixels[column][row] = [255, 255, 255];
+      }
+    }
+  }
 
   handler.savePixels(pixels, outputPath);
 }
@@ -119,7 +151,11 @@ function scaleDown() {
   let outputPath = 'output/tucan_scale_down.jpg';
   let pixels = handler.getPixels();
 
-  //Aqui tu codigo
+  for (let column=0, newcolumn=0; column<handler.getShape()[0]; column += 2, newcolumn++){
+    for (let row=0, newrow=0; row<handler.getShape()[1];row += 2, newrow++){
+      pixels[newcolumn][newrow] = pixels[column][row];
+    }
+  }
 
   handler.savePixels(pixels, outputPath, handler.getShape()[0] / 2, handler.getShape()[1] / 2);
 }
@@ -133,7 +169,20 @@ function dimBrightness(dimFactor) {
   let outputPath = 'output/tucan_dimed.jpg';
   let pixels = handler.getPixels();
 
-  //Aqui tu codigo
+  Bright = (n1, n2, n3, factor) => {
+    if (factor === 0) {
+      console.log("So much brightness! The image will be all white.");
+      return [255, 255, 255];
+    } else {
+      return [Math.trunc(n1 / factor), Math.trunc(n2 / factor), Math.trunc(n3 / factor)];
+    }
+  }
+
+  for (let column=0; column<handler.getShape()[0]; column++){
+    for (let row=0; row<handler.getShape()[1];row++){
+      pixels[column][row] = Bright(pixels[column][row][0], pixels[column][row][1], pixels[column][row][2], dimFactor);
+    }
+  }
 
   handler.savePixels(pixels, outputPath);
 }
@@ -149,7 +198,11 @@ function invertColors() {
   let outputPath = 'output/tucan_inverse.jpg';
   let pixels = handler.getPixels();
 
-  //Aqui tu codigo
+  for (let column=0; column<handler.getShape()[0]; column++){
+    for (let row=0; row<handler.getShape()[1];row++){
+      pixels[column][row]= [255 - pixels[column][row][0], 255 - pixels[column][row][1], 255 - pixels[column][row][2]];
+    }
+  }
 
   handler.savePixels(pixels, outputPath);
 }
@@ -164,15 +217,73 @@ function merge(alphaFirst, alphaSecond) {
   let catHandler = new ImageHandler('input/cat.jpg');
   let dogHandler = new ImageHandler('input/dog.jpg');
   let outputPath = 'output/merged.jpg';
-
   let catPixels = catHandler.getPixels();
   let dogPixels = dogHandler.getPixels();
 
   let pixels = [];
 
-  //Aqui tu codigo
+  let widthdiff = catHandler.getShape()[0] - dogHandler.getShape()[0];
+  let heightdiff = catHandler.getShape()[1] - dogHandler.getShape()[1];
 
-  dogHandler.savePixels(pixels, outputPath);
+  let maxHandler, minHandler, maxPixels, minPixels, possible=true;
+  if (catHandler.getShape()[0] >= dogHandler.getShape()[0] && catHandler.getShape()[1] >= dogHandler.getShape()[1]) {
+    console.log("Images can be merged");
+    maxPixels = catPixels;
+    minPixels = dogPixels;
+    maxHandler = catHandler;
+    minHandler = dogHandler;
+
+  } else if (catHandler.getShape()[0] < dogHandler.getShape()[0] && catHandler.getShape()[1] > dogHandler.getShape()[1]) {
+    console.log("Images can be merged");
+    maxPixels = dogPixels;
+    minPixels = catPixels;
+    maxHandler = dogHandler;
+    minHandler = catHandler;
+  } else {
+    console.log("Images have different sizes, cannot be merged");
+    possible = false;
+  }
+
+  function fusion(column, row) {
+    if ( column >= Math.trunc(widthdiff/2) && column < (maxHandler.getShape()[0] - Math.trunc(widthdiff/2)) ) {
+      if ( row >= Math.trunc(heightdiff/2) && row < (maxHandler.getShape()[1] - Math.trunc(heightdiff/2)) ) {
+        //fusion
+        maxPixels[column][row] = [
+          Math.trunc((maxPixels[column][row][0])*alphaFirst) + Math.trunc((minPixels[column - Math.trunc(widthdiff/2)][row - Math.trunc(heightdiff/2)][0])*alphaSecond), 
+           Math.trunc((maxPixels[column][row][1])*alphaFirst) + Math.trunc((minPixels[column - Math.trunc(widthdiff/2)][row - Math.trunc(heightdiff/2)][1])*alphaSecond), 
+           Math.trunc((maxPixels[column][row][2])*alphaFirst) + Math.trunc((minPixels[column - Math.trunc(widthdiff/2)][row - Math.trunc(heightdiff/2)][2])*alphaSecond)
+         ];
+       } else {
+         maxPixels[column][row] = [maxPixels[column][row][0], maxPixels[column][row][1], maxPixels[column][row][2]];
+       }
+     } else if ( row >= Math.trunc(heightdiff/2) && row < (maxHandler.getShape()[1] - Math.trunc(heightdiff/2)) ) {
+         if ( column >= Math.trunc(widthdiff/2) && column < (maxHandler.getShape()[0] - Math.trunc(widthdiff/2)) ) {
+           //fusion
+           minPixels[column][row] = [
+             Math.trunc((minPixels[column][row][0])*alphaFirst) + Math.trunc((maxPixels[column - Math.trunc(widthdiff/2)][row - Math.trunc(heightdiff/2)][0])*alphaSecond), 
+             Math.trunc((minPixels[column][row][1])*alphaFirst) + Math.trunc((maxPixels[column - Math.trunc(widthdiff/2)][row - Math.trunc(heightdiff/2)][1])*alphaSecond), 
+             Math.trunc((minPixels[column][row][2])*alphaFirst) + Math.trunc((maxPixels[column - Math.trunc(widthdiff/2)][row - Math.trunc(heightdiff/2)][2])*alphaSecond)
+           ];
+         } else {
+           maxPixels[column][row] = [maxPixels[column][row][0], maxPixels[column][row][1], maxPixels[column][row][2]];
+         }
+     } else {
+       maxPixels[column][row] = [maxPixels[column][row][0], maxPixels[column][row][1], maxPixels[column][row][2]];
+     }
+ }
+  
+  if (possible){
+    for (let column=0; column<maxHandler.getShape()[0]; column++){
+      for (let row=0; row<maxHandler.getShape()[1];row++){
+        fusion(column, row);
+      }
+    }
+    pixels = maxPixels;
+  } else{
+    pixels = catPixels;
+  }
+
+  catHandler.savePixels(pixels, outputPath);
 }
 
 
@@ -194,7 +305,7 @@ function merge(alphaFirst, alphaSecond) {
  *     Negativo: 8
  *     Fusion de imagenes: 9
  */
-let optionN = 0;
+let optionN = 9;
 
 switch (optionN) {
   case 1: redConverter(); break;
@@ -203,7 +314,7 @@ switch (optionN) {
   case 4: greyConverter(); break;
   case 5: blackAndWhiteConverter(); break;
   case 6: scaleDown(); break;
-  case 7: dimBrightness(2); break;
+  case 7: dimBrightness(1.5); break;
   case 8: invertColors(); break;
   case 9: merge(0.3, 0.7); break;
   default: ejemplo();
